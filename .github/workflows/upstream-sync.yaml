@@ -2,7 +2,7 @@ name: 'Usptream Sync'
 
 on:
   schedule:
-    - cron:  '40 19 * * *'
+    - cron:  '50 5 * * *'
     # scheduled at 07:00 every day
 
   workflow_dispatch:  # click the button on Github repo!
