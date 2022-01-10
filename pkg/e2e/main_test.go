@@ -14,42 +14,14 @@
    limitations under the License.
 */
 
-package progress
+package e2e
 
 import (
-	"context"
-	"fmt"
-	"io"
+	"os"
+	"testing"
 )
 
-type plainWriter struct {
-	out  io.Writer
-	done chan bool
-}
-
-func (p *plainWriter) Start(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-p.done:
-		return nil
-	}
-}
-
-func (p *plainWriter) Event(e Event) {
-	fmt.Fprintln(p.out, e.ID, e.Text, e.StatusText)
-}
-
-func (p *plainWriter) Events(events []Event) {
-	for _, e := range events {
-		p.Event(e)
-	}
-}
-
-func (p *plainWriter) TailMsgf(m string, args ...interface{}) {
-	fmt.Fprintln(p.out, append([]interface{}{m}, args...)...)
-}
-
-func (p *plainWriter) Stop() {
-	p.done <- true
+func TestMain(m *testing.M) {
+	exitCode := m.Run()
+	os.Exit(exitCode)
 }

@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package main
+package compatibility
 
 import (
 	"fmt"
@@ -43,7 +43,8 @@ func getStringFlags() []string {
 	}
 }
 
-func convert(args []string) []string {
+// Convert transforms standalone docker-compose args into CLI plugin compliant ones
+func Convert(args []string) []string {
 	var rootFlags []string
 	command := []string{compose.PluginName}
 	l := len(args)

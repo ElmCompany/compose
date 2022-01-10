@@ -1,3 +1,5 @@
+//go:build !standalone
+
 /*
    Copyright 2020 Docker Compose CLI authors
 
@@ -14,27 +16,6 @@
    limitations under the License.
 */
 
-package progress
+package e2e
 
-import (
-	"context"
-)
-
-type noopWriter struct {
-}
-
-func (p *noopWriter) Start(ctx context.Context) error {
-	return nil
-}
-
-func (p *noopWriter) Event(Event) {
-}
-
-func (p *noopWriter) Events([]Event) {
-}
-
-func (p *noopWriter) TailMsgf(_ string, _ ...interface{}) {
-}
-
-func (p *noopWriter) Stop() {
-}
+const composeStandaloneMode = false

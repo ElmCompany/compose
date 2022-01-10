@@ -380,6 +380,7 @@ func (s *composeService) getCreateOptions(ctx context.Context, p *types.Project,
 		Isolation:      container.Isolation(service.Isolation),
 		Runtime:        service.Runtime,
 		LogConfig:      logConfig,
+		GroupAdd:       service.GroupAdd,
 	}
 
 	return &containerConfig, &hostConfig, networkConfig, nil
@@ -718,11 +719,7 @@ MOUNTS:
 		if m.Type == mount.TypeBind || m.Type == mount.TypeNamedPipe {
 			for _, v := range service.Volumes {
 				if v.Target == m.Target && v.Bind != nil && v.Bind.CreateHostPath {
-					mode := "rw"
-					if m.ReadOnly {
-						mode = "ro"
-					}
-					binds = append(binds, fmt.Sprintf("%s:%s:%s", m.Source, m.Target, mode))
+					binds = append(binds, fmt.Sprintf("%s:%s:%s", m.Source, m.Target, getBindMode(v.Bind, m.ReadOnly)))
 					continue MOUNTS
 				}
 			}
@@ -730,6 +727,23 @@ MOUNTS:
 		mounts = append(mounts, m)
 	}
 	return volumeMounts, binds, mounts, nil
+}
+
+func getBindMode(bind *types.ServiceVolumeBind, readOnly bool) string {
+	mode := "rw"
+
+	if readOnly {
+		mode = "ro"
+	}
+
+	switch bind.SELinux {
+	case types.SELinuxShared:
+		mode += ",z"
+	case types.SELinuxPrivate:
+		mode += ",Z"
+	}
+
+	return mode
 }
 
 func buildContainerMountOptions(p types.Project, s types.ServiceConfig, img moby.ImageInspect, inherit *moby.Container) ([]mount.Mount, error) {
@@ -1014,6 +1028,14 @@ func (s *composeService) ensureNetwork(ctx context.Context, n types.NetworkConfi
 	if err != nil {
 		if errdefs.IsNotFound(err) {
 			if n.External.External {
+				if n.Driver == "overlay" {
+					// Swarm nodes do not register overlay networks that were
+					// created on a different node unless they're in use.
+					// Here we assume `driver` is relevant for a network we don't manage
+					// which is a non-sense, but this is our legacy ¯\(ツ)/¯
+					// networkAttach will later fail anyway if network actually doesn't exists
+					return nil
+				}
 				return fmt.Errorf("network %s declared as external, but could not be found", n.Name)
 			}
 			var ipam *network.IPAM
